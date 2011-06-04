@@ -23,7 +23,7 @@
 	$.infinitescroll.defaults = {
 		callback: function () { },
 		debug: false,
-		binder: $(window), // used to cache the selector
+		binder: undefined,
 		nextSelector: "div.navigation a:first",
 		loadingImg: "loading.gif",
 		loadingText: "<em>Loading the next page...</em>",
@@ -41,7 +41,6 @@
 		dataType: 'html',
 		appendCallback: true,
 		bufferPx: 40,
-		orientation: 'height',
 		errorCallback: function () { },
 		currPage: 1,
 		infid: 0, //Instance ID
@@ -50,10 +49,10 @@
 		isDestroyed: false,
 		isDone: false, // For when it goes all the way through the archive.
 		isPaused: false,
-		pixelsFromNavToBottom: undefined,
-		pagesLoaded: null,
 		path: undefined,
-		loadingMsg: undefined
+		loadingMsg: undefined,
+                localMode: false,
+                zeroBased: false
 	};
 
 
@@ -67,29 +66,26 @@
 
         _create: function infscr_create(options, callback) {
 
-            var debug = this._debug;
-
             // Define options and shorthand
             var opts = this.options = $.extend({}, $.infinitescroll.defaults, options);
            
-            // If selectors from options aren't valid, return false
-            if (!this._validate(options)) { return false; }
-
             // contentSelector is 'page fragment' option for .load() / .ajax() calls
             opts.contentSelector = opts.contentSelector || this.element;
 
             // loadMsgSelector - if we want to place the load message in a specific selector, defaulted to the contentSelector
             opts.loadMsgSelector = opts.loadMsgSelector || opts.contentSelector;
 
-
-            // get the relative URL - everything past the domain name.
-            var relurl = /(.*?\/\/).*?(\/.*)/,
-	        	path = $(opts.nextSelector).attr('href');
+            // get the next page URL 
+            opts.path = $(opts.nextSelector).attr('href');
 
             // if there's not path, return
-            if (!path) { debug('Navigation selector not found'); return; }
+            if (!opts.path) { 
+              this._debug('Navigation ',opts.nextSelector,' selector not found'); 
+              return; 
+            }
 
-            opts.path = path;
+            // init page counter
+            opts.currPage = opts.zeroBased?0:1;
 
             // Define loadingMsg
             opts.loadingMsg = $('<div class="infscr-loading"><img alt="Loading..." src="' + opts.loadingImg + '" /><div>' + opts.loadingText + '</div></div>');
@@ -100,7 +96,6 @@
 
             // distance from nav links to bottom
             // computed as: height of the document + top offset of container - top offset of nav link
-            opts.pixelsFromNavToBottom = $(document).height() - $(opts.navSelector).offset().top;
             $(opts.navSelector).hide();
 
             // callback loading
@@ -108,9 +103,9 @@
             opts.callback = callback || function () { };
 
             // Setup binding
-            // if extended, do that
-			// else, do this
-			this.binding('bind');
+            opts.binder = opts.localMode ? $(opts.contentSelector) : $(window);
+            //this._debug("Binding to ",opts.binder);
+            this.binding('bind');
 
         },
 
@@ -160,7 +155,7 @@
             }
 
             opts.isDone = true;
-            opts.currPage = 1; // if you need to go back to this instance
+            opts.currPage = opts.zeroBased?0:1; // if you need to go back to this instance
             opts.isPaused = false;
             this.binding('unbind');
 
@@ -241,15 +236,30 @@
 
         },
 
+        _hiddenHeight: function(element) {
+                var height = 0;
+
+                element.children().each(function () {
+                    height += $(this).height();
+                });
+
+                return height;
+        },
+
         _nearbottom: function infscr_nearbottom() {
 
             var opts = this.options,
-	        	pixelsFromWindowBottomToBottom = 0 + $(document).height() - (opts.binder.scrollTop()) - $(window).height();
+                        //documentElement = opts.localMode ? $(opts.contentSelector) : $(document),
+                        documentElement = $(opts.contentSelector),
+                        documentHeight = opts.localMode ? this._hiddenHeight(documentElement) : documentElement.height(),
+                        viewPort = opts.localMode ? $(opts.contentSelector) : $(window),
+                        scrollTop = viewPort.scrollTop(),
+                        viewPortHeight = viewPort.height();
 
-            this._debug('math:', pixelsFromWindowBottomToBottom, opts.pixelsFromNavToBottom);
+            this._debug("scrollTop+viewPortHeight=",scrollTop+viewPortHeight,
+                        "documentHeight - buffer=",documentHeight - opts.bufferPx);
 
-            // if distance remaining in the scroll (including buffer) is less than the orignal nav to bottom....
-            return (pixelsFromWindowBottomToBottom - opts.bufferPx < opts.pixelsFromNavToBottom);
+            return (scrollTop + viewPortHeight > documentHeight - opts.bufferPx);
 
         },
 
@@ -312,7 +322,7 @@
 
             };
 
-            this._debug('Binding', binding);
+            //this._debug('Binding', binding);
 
         },
 
@@ -385,7 +395,7 @@
                 box = $(opts.contentSelector).is('table') ? $('<tbody/>') : $('<div/>');
 
                 desturl = instance._determinepath(opts.path);
-                instance._debug('heading into ajax', desturl);
+                //instance._debug('heading into ajax', desturl);
 
                 // create switch parameter for append / callback
                 // MAKE SURE CALLBACK EXISTS???
