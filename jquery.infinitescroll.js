@@ -69,11 +69,11 @@
 
             var debug = this._debug;
 
-            // If selectors from options aren't valid, return false
-            if (!this._validate(options)) { return false; }
-
             // Define options and shorthand
             var opts = this.options = $.extend({}, $.infinitescroll.defaults, options);
+           
+            // If selectors from options aren't valid, return false
+            if (!this._validate(options)) { return false; }
 
             // contentSelector is 'page fragment' option for .load() / .ajax() calls
             opts.contentSelector = opts.contentSelector || this.element;
@@ -89,8 +89,10 @@
             // if there's not path, return
             if (!path) { debug('Navigation selector not found'); return; }
 
+            opts.path = path;
+
             // Define loadingMsg
-            opts.loadingMsg = $('<div id="infscr-loading"><img alt="Loading..." src="' + opts.loadingImg + '" /><div>' + opts.loadingText + '</div></div>');
+            opts.loadingMsg = $('<div class="infscr-loading"><img alt="Loading..." src="' + opts.loadingImg + '" /><div>' + opts.loadingText + '</div></div>');
 
             // Preload loadingImg
             (new Image()).src = opts.loadingImg;
@@ -99,6 +101,7 @@
             // distance from nav links to bottom
             // computed as: height of the document + top offset of container - top offset of nav link
             opts.pixelsFromNavToBottom = $(document).height() - $(opts.navSelector).offset().top;
+            $(opts.navSelector).hide();
 
             // callback loading
             // FIX
@@ -115,7 +118,7 @@
         _debug: function infscr_debug() {
 
             if (this.options.debug) {
-                return window.console && console.log.call(console, arguments);
+                return window.console && console.log.apply(console, arguments);
             }
 
         },
@@ -375,15 +378,13 @@
 
             opts.loadingMsg.appendTo(opts.loadMsgSelector).show(opts.loadingMsgRevealSpeed, function () {
 
-                $(opts.navSelector).hide();
-
                 // increment the URL bit. e.g. /page/3/
                 opts.currPage++;
 
                 // if we're dealing with a table we can't use DIVs
                 box = $(opts.contentSelector).is('table') ? $('<tbody/>') : $('<div/>');
 
-                desturl = this._determinepath(path);
+                desturl = instance._determinepath(opts.path);
                 instance._debug('heading into ajax', desturl);
 
                 // create switch parameter for append / callback
