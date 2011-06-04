@@ -11,9 +11,9 @@
 	
 */
 
-(function (window, $, undefined) {
+(function(window, $) {
 	
-	$.infinitescroll = function infscr(options, callback, element) {
+	$.infinitescroll = function(options, callback, element) {
 		
 		this.element = $(element);
 		this._create(options, callback);
@@ -21,7 +21,7 @@
 	};
 	
 	$.infinitescroll.defaults = {
-		callback: function () { },
+		callback: function() { },
 		debug: false,
 		binder: undefined,
 		nextSelector: "div.navigation a:first",
@@ -41,7 +41,7 @@
 		dataType: 'html',
 		appendCallback: true,
 		bufferPx: 40,
-		errorCallback: function () { },
+		errorCallback: function() { },
 		currPage: 1,
 		infid: 0, //Instance ID
 		isDuringAjax: false,
@@ -64,7 +64,7 @@
         ----------------------------
         */
 
-        _create: function infscr_create(options, callback) {
+        _create: function(options, callback) {
 
             // Define options and shorthand
             var opts = this.options = $.extend({}, $.infinitescroll.defaults, options);
@@ -100,7 +100,7 @@
 
             // callback loading
             // FIX
-            opts.callback = callback || function () { };
+            opts.callback = callback || function() { };
 
             // Setup binding
             opts.binder = opts.localMode ? $(opts.contentSelector) : $(window);
@@ -110,7 +110,7 @@
         },
 
         // Console log wrapper
-        _debug: function infscr_debug() {
+        _debug: function() {
 
             if (this.options.debug) {
                 return window.console && console.log.apply(console, arguments);
@@ -119,7 +119,7 @@
         },
 
         // find the number to increment in the path.
-        _determinepath: function infscr_determinepath(path) {
+        _determinepath: function(path) {
 
             var opts = this.options;
 
@@ -140,7 +140,7 @@
         },
 
         // Custom error
-        _error: function infscr_error(xhr) {
+        _error: function(xhr) {
 
             var opts = this.options;
 
@@ -162,12 +162,12 @@
         },
 
         // Load Callback
-        _loadcallback: function infscr_loadcallback(box, data) {
+        _loadcallback: function(box, data) {
 
             var opts = this.options,
-	    		callback = this.options.callback, // GLOBAL OBJECT FOR CALLBACK
-	    		result = (opts.isDone) ? 'done' : (!opts.appendCallback) ? 'no-append' : 'append',
-	    		frag;
+                callback = this.options.callback, // GLOBAL OBJECT FOR CALLBACK
+                result = (opts.isDone) ? 'done' : (!opts.appendCallback) ? 'no-append' : 'append',
+                frag, children;
 
             switch (result) {
 
@@ -176,23 +176,21 @@
                     this._showdonemsg();
                     return false;
 
-                    break;
-
                 case 'no-append':
 
                     if (opts.dataType == 'html') {
                         data = '<div>' + data + '</div>';
                         data = $(data).find(opts.itemSelector);
-                    };
+                    }
 
                     break;
 
                 case 'append':
 
-                    var children = box.children();
+                    children = box.children();
 
                     // if it didn't return anything
-                    if (children.length == 0) {
+                    if (children.length === 0) {
                         return this._error('end');
                     }
 
@@ -203,7 +201,7 @@
                         frag.appendChild(box[0].firstChild);
                     }
 
-                    this._debug('contentSelector', $(opts.contentSelector)[0])
+                    this._debug('contentSelector', $(opts.contentSelector)[0]);
                     $(opts.contentSelector)[0].appendChild(frag);
                     // previously, we would pass in the new DOM element as context for the callback
                     // however we're now using a documentfragment, which doesnt havent parents or children,
@@ -226,11 +224,16 @@
 
             // smooth scroll to ease in the new content
             if (opts.animate) {
-                var scrollTo = $(window).scrollTop() + $('#infscr-loading').height() + opts.extraScrollPx + 'px';
-                $('html,body').animate({ scrollTop: scrollTo }, 800, function () { opts.isDuringAjax = false; });
+                $('html,body').animate({ 
+                        scrollTop: $(window).scrollTop() +
+                                $('#infscr-loading').height() +
+                                opts.extraScrollPx + 'px' 
+                }, 800, function() { opts.isDuringAjax = false; });
             }
 
-            if (!opts.animate) opts.isDuringAjax = false; // once the call is done, we can allow it again.
+            if (!opts.animate) {
+                opts.isDuringAjax = false; // once the call is done, we can allow it again.
+            }
 
             callback.call($(opts.contentSelector)[0], data);
 
@@ -239,14 +242,14 @@
         _hiddenHeight: function(element) {
                 var height = 0;
 
-                element.children().each(function () {
+                element.children().each(function() {
                     height += $(this).height();
                 });
 
                 return height;
         },
 
-        _nearbottom: function infscr_nearbottom() {
+        _nearbottom: function() {
 
             var opts = this.options,
                         //documentElement = opts.localMode ? $(opts.contentSelector) : $(document),
@@ -264,35 +267,23 @@
         },
 
         // Show done message
-        _showdonemsg: function infscr_showdonemsg() {
+        _showdonemsg: function() {
 
             var opts = this.options;
 
             opts.loadingMsg
-	    		.find('img')
-	    		.hide()
-	    		.parent()
-	    		.find('div').html(opts.donetext).animate({ opacity: 1 }, 2000, function () {
-	    		    $(this).parent().fadeOut('normal');
-	    		});
+                .find('img')
+                .hide()
+                .parent()
+                .find('div').html(opts.donetext).animate({ opacity: 1 }, 2000, function() {
+                        $(this).parent().fadeOut('normal');
+                });
 
             // user provided callback when done    
             opts.errorCallback();
 
         },
 
-        // grab each selector option and see if any fail
-        _validate: function infscr_validate(opts) {
-
-            for (var key in opts) {
-                if (key.indexOf && key.indexOf('Selector') > -1 && $(opts[key]).length === 0) {
-                    this._debug('Your ' + key + ' found no elements.');
-                    return false;
-                }
-                return true;
-            }
-
-        },
 
         /*	
         ----------------------------
@@ -301,12 +292,12 @@
         */
 
         // Bind or unbind from scroll
-        binding: function infscr_binding(binding) {
+        binding: function(binding) {
 
             var instance = this;
 
             if (binding !== 'bind' && binding !== 'unbind') {
-                this._debug('Binding value  ' + binding + ' not valid')
+                this._debug('Binding value  ' + binding + ' not valid');
                 return false;
             }
 
@@ -316,18 +307,18 @@
 
             } else {
 
-                (this.options.binder)[binding]('smartscroll.infscr.' + instance.options.infid, function () {
+                (this.options.binder)[binding]('smartscroll.infscr.' + instance.options.infid, function() {
                     instance.setup();
                 });
 
-            };
+            }
 
             //this._debug('Binding', binding);
 
         },
 
         // Destroy current instance of plugin
-        destroy: function infscr_destroy() {
+        destroy: function() {
 
             this.options.isDestroyed = true;
             return this._error('destroy');
@@ -335,14 +326,14 @@
         },
 
         // Pause / temporarily disable plugin from firing
-        pause: function infscr_pause(pause) {
+        pause: function(pause) {
 
             var opts = this.options;
 
             // If pause is not 'pause' or 'resume', toggle it's value
             if (pause !== 'pause' && pause !== 'resume' && pause !== 'toggle' && pause !== null) {
                 this._debug('Invalid argument. Toggling pause value instead');
-            };
+            }
 
             pause = (pause && (pause == 'pause' || pause == 'resume')) ? pause : 'toggle';
 
@@ -366,19 +357,18 @@
         },
 
         // Retrieve next set of content items
-        retrieve: function infscr_retrieve(pageNum) {
+        retrieve: function(pageNum) {
 
             var instance = this,
-				opts = instance.options,
-				debug = instance._debug,
-				box, frag, desturl, method, condition,
-	    		pageNum = pageNum || null,
-	    		getPage = (!!pageNum) ? pageNum : opts.currPage;
+                opts = instance.options,
+                debug = instance._debug,
+                box, frag, desturl, method, condition,
+                getPage = (!!pageNum) ? pageNum : opts.currPage;
 
             if (opts.isDestroyed) {
                 this._debug('Instance already destroyed');
                 return false;
-            };
+            }
 
             // we dont want to fire the ajax multiple times
             opts.isDuringAjax = true;
@@ -386,7 +376,7 @@
             // this is where the loadingStart function goes!!!
             //($.isFunction(opts.loadingStart)) ? opts.loadingStart() : /* default*/ '';
 
-            opts.loadingMsg.appendTo(opts.loadMsgSelector).show(opts.loadingMsgRevealSpeed, function () {
+            opts.loadingMsg.appendTo(opts.loadMsgSelector).show(opts.loadingMsgRevealSpeed, function() {
 
                 // increment the URL bit. e.g. /page/3/
                 opts.currPage++;
@@ -400,14 +390,16 @@
                 // create switch parameter for append / callback
                 // MAKE SURE CALLBACK EXISTS???
                 method = (opts.dataType == 'html' || opts.dataType == 'json') ? opts.dataType : 'html+callback';
-                if (opts.appendCallback && opts.dataType == 'html') method += '+callback'
+                if (opts.appendCallback && opts.dataType == 'html') {
+                        method += '+callback';
+                }
 
                 switch (method) {
 
                     case 'html+callback':
 
                         instance._debug('Using HTML via .load() method');
-                        box.load(desturl + ' ' + opts.itemSelector, null, function infscr_ajax_callback(jqXHR, textStatus) {
+                        box.load(desturl + ' ' + opts.itemSelector, null, function(jqXHR, textStatus) {
                             instance._loadcallback(box, jqXHR.responseText);
                         });
 
@@ -421,9 +413,17 @@
                             // params
                             url: desturl,
                             dataType: opts.dataType,
-                            complete: function infscr_ajax_callback(jqXHR, textStatus) {
-                                condition = (typeof (jqXHR.isResolved) !== 'undefined') ? (jqXHR.isResolved()) : (textStatus === "success" || textStatus === "notmodified");
-                                (condition) ? instance._loadcallback(box, jqXHR.responseText) : instance._error('end');
+                            complete: function(jqXHR, textStatus) {
+
+                                condition = (typeof (jqXHR.isResolved) !== 'undefined') ? 
+                                        (jqXHR.isResolved()) : 
+                                        (textStatus === "success" || textStatus === "notmodified");
+
+                                if(condition) {
+                                        instance._loadcallback(box, jqXHR.responseText);
+                                } else {
+                                        instance._error('end');
+                                }
                             }
                         });
 
@@ -436,19 +436,23 @@
         },
 
         // Check to see height left to fire - rename this!!!!
-        setup: function infscr_setup() {
+        setup: function() {
 
             var opts = this.options;
 
-            if (opts.isDuringAjax || opts.isInvalidPage || opts.isDone || opts.isDestroyed || opts.isPaused) return;
+            if (opts.isDuringAjax || opts.isInvalidPage || opts.isDone || opts.isDestroyed || opts.isPaused) {
+                return;
+            }
 
-            if (!this._nearbottom()) return;
+            if (!this._nearbottom()) {
+                return;
+            }
 
             this.retrieve();
 
         }
 
-    }
+    };
 
 
     /*	
@@ -469,19 +473,19 @@
 	
     */
 
-    $.fn.infinitescroll = function infscr_init(options, callback) {
+    $.fn.infinitescroll = function(options, callback) {
 
 
-        var thisCall = typeof options;
+        var thisCall = typeof options, args;
 
         switch (thisCall) {
 
             // method 
             case 'string':
 
-                var args = Array.prototype.slice.call(arguments, 1);
+                args = Array.prototype.slice.call(arguments, 1);
 
-                this.each(function () {
+                this.each(function() {
 
                     var instance = $.data(this, 'infinitescroll');
 
@@ -505,7 +509,7 @@
             // creation 
             case 'object':
 
-                this.each(function () {
+                this.each(function() {
 
                     var instance = $.data(this, 'infinitescroll');
 
@@ -544,13 +548,13 @@
 		scrollTimeout;
 
     event.special.smartscroll = {
-        setup: function () {
+        setup: function() {
             $(this).bind("scroll", event.special.smartscroll.handler);
         },
-        teardown: function () {
+        teardown: function() {
             $(this).unbind("scroll", event.special.smartscroll.handler);
         },
-        handler: function (event, execAsap) {
+        handler: function(event, execAsap) {
             // Save the context
             var context = this,
 		      args = arguments;
@@ -558,14 +562,20 @@
             // set correct event type
             event.type = "smartscroll";
 
-            if (scrollTimeout) { clearTimeout(scrollTimeout); }
-            scrollTimeout = setTimeout(function () {
-                jQuery.event.handle.apply(context, args);
-            }, execAsap === "execAsap" ? 0 : 100);
+            if (scrollTimeout) { 
+                window.clearTimeout(scrollTimeout); 
+            }
+
+            scrollTimeout = window.setTimeout(
+                function() {
+                        jQuery.event.handle.apply(context, args);
+                }, 
+                execAsap === "execAsap" ? 0 : 100
+            );
         }
     };
 
-    $.fn.smartscroll = function (fn) {
+    $.fn.smartscroll = function(fn) {
         return fn ? this.bind("smartscroll", fn) : this.trigger("smartscroll", ["execAsap"]);
     };
 
